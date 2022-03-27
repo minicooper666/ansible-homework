@@ -1,0 +1,49 @@
+---
+- name: Install and start httpd service
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Getting CentOS vault repo operable
+      shell: "{{ item }}"
+      args:
+        warn: no
+      with_items:
+        - "sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-Linux-*"
+        - "sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-Linux-*"
+
+    - name: Installing httpd
+      yum:
+        name: httpd
+        state: present
+
+    - name: Starting httpd service
+      service:
+        name: httpd
+        state: started
+        enabled: yes
+
+    - name: Creating index page for httpd testing
+      copy:
+        dest: /var/www/html/index.html
+        content: "Welcome to my web server"
+
+    - name: Enabling firewalld
+      service:
+        name: firewalld
+        state: started
+        enabled: yes
+
+    - name: Opening http 80 port for httpd
+      firewalld:
+        port: 80/tcp
+        permanent: yes
+        state: enabled
+        immediate: yes
+
+    - name: Check that a page returns a status 200 and predefined contents
+      uri:
+        url: http://{{ inventory.hostname }}
+        return_content: yes
+      register: host
+      failed_when: "'Welcome to my web server' not in host.content"

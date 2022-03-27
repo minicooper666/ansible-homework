@@ -1,0 +1,24 @@
+---
+- name: Modifying GRUB record
+  hosts: all
+  become: yes
+  vars:
+    variables:
+      - name: net.ifnames
+        value: 0
+      - name: biosdevname
+        value: 0
+
+  tasks:
+    - name: Add or replace variables in grub file
+      lineinfile:
+        path: /etc/default/grub
+        backrefs: yes
+        regexp: '^(GRUB_CMDLINE_LINUX=(?:(?![" ]{{ item.name | regex_escape }}=).)*)(?:[" ]{{ item.name | regex_escape }}=\S+)?(.*")$'
+        line: '\1 {{ item.name }}={{ item.value }}\2'
+      loop: "{{ variables }}"
+      register: grub_update
+
+    - name: Apply new GRUB config if change was succesful
+      command: "/sbin/grub2-mkconfig -o /etc/default/grub"
+      when: grub_update.changed

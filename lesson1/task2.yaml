@@ -1,0 +1,28 @@
+---
+- name: Uninstall httpd
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Uninstalling httpd
+      yum:
+        name: httpd
+        state: absent
+
+    - name: Removing index page
+      file:
+        name: /var/www/html/index.html
+        state: absent
+
+    - name: Enabling firewalld
+      service:
+        name: firewalld
+        state: started
+        enabled: yes
+
+    - name: Removing open ports for httpd
+      firewalld:
+        port: 80/tcp
+        permanent: yes
+        state: disabled
+        immediate: yes
