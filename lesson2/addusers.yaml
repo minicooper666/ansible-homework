@@ -1,0 +1,19 @@
+---
+- name: Adding 3 users (Alice, Bob, Carol) to all hosts
+  hosts: all
+  become: yes
+  vars_files:
+  - users.yaml
+
+  tasks:
+    - name: Adding users with encrypted passwords
+      user:
+        name: "{{ item.username }}"
+        password: "{{ item.password | password_hash('sha512') }}"
+        update_password: on_create
+        comment: "{{ item.comment }}"
+        state: present
+        system: no
+        create_home: yes
+      loop: "{{ users }}"
+
