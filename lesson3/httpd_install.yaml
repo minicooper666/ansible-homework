@@ -1,6 +1,7 @@
 ---
 - name: Installs httpd, opens firewall port and adds a test page
   hosts: all
+  become: yes
   roles:
     - httpd_install
 

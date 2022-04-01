@@ -3,4 +3,5 @@ listen_port: 80
 httpd_user: apache
 httpd_log_path: /var/log/httpd
 httpd_www_root: /var/www/html
+author: sergei_varennik@epam.com
 
