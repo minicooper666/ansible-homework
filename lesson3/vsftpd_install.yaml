@@ -1,0 +1,6 @@
+---
+- name: Installs vsftpd, manages SELinux permissions and setting folder rules
+  hosts: all
+  roles:
+    - vsftpd_install
+

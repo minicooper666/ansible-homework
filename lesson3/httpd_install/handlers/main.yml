@@ -1,0 +1,7 @@
+---
+- name: Restart httpd server
+  service:
+    name: httpd
+    state: reloaded
+  become: yes
+
