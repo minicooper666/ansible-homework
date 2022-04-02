@@ -52,7 +52,7 @@
       state: started
       enabled: yes
 
-  - name: Opening http 80 port for httpd
+  - name: Opening http {{ listen_port }} port for httpd
     firewalld:
       port: "{{ listen_port }}/tcp"
       permanent: yes
