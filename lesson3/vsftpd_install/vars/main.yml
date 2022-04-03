@@ -1,2 +1,5 @@
 ---
-# vars file for vsftpd_install
+config_path: /etc/vsftpd/vsftpd.conf
+pasv_min_port: 49000
+pasv_max_port: 50000
+anon_root_folder: /var/ftp/pub

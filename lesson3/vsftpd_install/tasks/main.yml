@@ -1,2 +1,87 @@
 ---
-# tasks file for vsftpd_install
+- block:
+  - name: Getting CentOS vault repo operable
+    shell: "{{ item }}"
+    args:
+      warn: no
+    with_items:
+      - "sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-Linux-*"
+      - "sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-Linux-*"
+
+  - name: Installing vsftpd and semanage
+    yum:
+      name: 
+        - vsftpd
+        - policycoreutils-python-utils
+      state: present
+
+  - name: Configuring SELinux
+    block:
+      - name: modify selinux settings
+        seboolean:
+          name: "{{ item }}"
+          state: yes
+          persistent: yes
+        loop:
+          - "ftpd_anon_write"
+          - "ftpd_full_access"
+        when:
+          - ansible_selinux.status is defined
+          - ansible_selinux.status == "enabled"
+
+      - name: Allow connections to command port
+        seport:
+          ports: "21"
+          proto: tcp
+          setype: ftp_port_t
+          state: present
+
+      - name: Allow connections to data port(s) {{ pasv_min_port }}-{{ pasv_max_port }}
+        seport:
+          ports: "20,{{ pasv_min_port }}-{{ pasv_max_port }}"
+          proto: tcp
+          setype: ftp_data_port_t
+          state: present
+
+    when:
+      - ansible_selinux.status is defined
+      - ansible_selinux.status == "enabled"
+
+  - name: Creating basic vsftpd config
+    template:
+      src: vsftpd.conf.j2
+      dest: "{{ config_path }}"
+    notify: Reload vsftpd
+
+  - name: Enabling firewalld
+    service:
+      name: firewalld
+      state: started
+      enabled: yes
+
+  - name: Opening tcp 20-21 and {{ pasv_min_port }}-{{ pasv_max_port }} ports for vsftpd
+    firewalld:
+      port: "{{ item }}/tcp"
+      permanent: yes
+      state: enabled
+      immediate: yes
+    loop:
+      - "20-21"
+      - "{{ pasv_min_port }}-{{ pasv_max_port }}"
+
+  - name: Creating root folder
+    file:
+      path: "{{ anon_root_folder }}"
+      state: directory
+      mode: "555"
+      owner: ftp
+      group: ftp
+
+  - name: Creating upload folder
+    file:
+      path: "{{ anon_root_folder }}/upload"
+      state: directory
+      mode: "777"
+      owner: ftp
+      group: ftp
+
